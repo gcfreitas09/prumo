@@ -1,0 +1,171 @@
+<title>Prumo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#FFFFFF">
+<style>
+/* Prumo web — mesma linguagem do app (AGENTS.md › Design): nativo e sóbrio,
+   fonte do sistema, listas com fio de 0,5 px, sem cartões nem sombras.
+   Assinatura: o fio de prumo (entrada e "lendo os números"). */
+:root {
+  --fundo: #FFFFFF; --fundo2: #EFEFED; --fio: #E6E6E3; --texto: #111111; --texto2: #6E6E73;
+  --acao: #1F4647; --agua: #2B7BD6; --gas: #DD6B2B; --vazio: #E7E7E4;
+  --ok: #2E9D5B; --aviso: #C98A0B; --erro: #D93A3A; --latao: #B08D57;
+  --sobre-acao: #FFFFFF;
+  --t-titulo: 700 34px/1.12 var(--sis); --t-leitura: 600 44px/1.1 var(--sis);
+  --t-corpo: 400 17px/1.35 var(--sis); --t-legenda: 400 13px/1.3 var(--sis);
+  --sis: -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --fundo: #0B0B0C; --fundo2: #1C1C1E; --fio: #2C2C2E; --texto: #F5F5F4; --texto2: #98989F;
+  --acao: #7FBFB4; --agua: #4C9BFF; --gas: #FF8C4A; --vazio: #2C2C2E;
+  --ok: #3CCB7A; --aviso: #F2BD45; --erro: #FF6961; --latao: #C9A46A; --sobre-acao: #0B0B0C; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --fundo: #0B0B0C; --fundo2: #1C1C1E; --fio: #2C2C2E; --texto: #F5F5F4; --texto2: #98989F;
+  --acao: #7FBFB4; --agua: #4C9BFF; --gas: #FF8C4A; --vazio: #2C2C2E;
+  --ok: #3CCB7A; --aviso: #F2BD45; --erro: #FF6961; --latao: #C9A46A; --sobre-acao: #0B0B0C; color-scheme: dark }
+
+html, body { height: 100%; }
+body { background: var(--fundo); color: var(--texto); font: var(--t-corpo); -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--fundo); }
+* { box-sizing: border-box; }
+button, input { font: inherit; color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--acao); outline-offset: 2px; border-radius: 6px; }
+.num { font-variant-numeric: tabular-nums; }
+
+#app { max-width: 640px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; }
+.pad { padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+
+/* barra */
+.barra { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--fundo); display: flex; align-items: center; gap: 4px; min-height: 52px; padding-block: 4px; }
+.barra .esp { flex: 1; }
+.icone { width: 44px; height: 44px; display: grid; place-items: center; border-radius: 22px; color: var(--acao); }
+.icone svg { width: 24px; height: 24px; }
+.voltar { display: flex; align-items: center; gap: 2px; min-height: 44px; color: var(--acao); font-weight: 400; margin-left: -8px; padding-right: 8px; }
+.voltar svg { width: 24px; height: 24px; }
+
+h1 { font: var(--t-titulo); letter-spacing: -0.4px; margin: 4px 0 4px; text-wrap: balance; }
+.sub { color: var(--texto2); margin: 0 0 16px; }
+.legenda { font: var(--t-legenda); color: var(--texto2); }
+.rotulo { font: 600 13px/1.3 var(--sis); color: var(--texto2); letter-spacing: 0.4px; text-transform: uppercase; margin: 24px 0 6px; }
+
+/* segmentado */
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--fundo2); border-radius: 10px; padding: 2px; margin: 4px 0 16px; }
+.seg button { min-height: 36px; border-radius: 8px; font-weight: 500; font-size: 15px; color: var(--texto); transition: background 0.2s; }
+.seg button[aria-pressed="true"] { background: var(--fundo); box-shadow: 0 0 0 0.5px var(--fio); font-weight: 600; }
+.seg .cont { color: var(--texto2); font-weight: 400; margin-left: 4px; }
+
+/* mapa do prédio */
+.mapa { display: flex; flex-direction: column; gap: 3px; margin: 0 0 20px; }
+.mapa .andar { display: flex; gap: 3px; align-items: center; }
+.mapa .andar span.n { width: 22px; font: var(--t-legenda); color: var(--texto2); }
+.mapa i { width: 13px; height: 13px; border-radius: 3px; background: var(--vazio); display: block; }
+
+/* listas */
+.lista { border-top: 0.5px solid var(--fio); }
+.linha { display: flex; align-items: center; gap: 12px; min-height: 48px; border-bottom: 0.5px solid var(--fio); padding: 6px 0; width: 100%; text-align: left; }
+.linha .p { flex: 1; min-width: 0; }
+.linha .d { text-align: right; }
+.linha .v { font-variant-numeric: tabular-nums; }
+.linha .c { font: var(--t-legenda); color: var(--texto2); font-variant-numeric: tabular-nums; }
+.link { color: var(--acao); font-weight: 600; }
+.andar-titulo { font: 600 13px/1.3 var(--sis); color: var(--texto2); padding: 18px 0 6px; border-bottom: 0.5px solid var(--fio); }
+
+/* botões */
+.rodape { position: sticky; bottom: 0; background: var(--fundo); padding-top: 8px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); margin-top: auto; }
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 50px; border-radius: 12px; background: var(--acao); color: var(--sobre-acao); font-weight: 600; font-size: 17px; text-align: center; text-decoration: none; }
+.btn[disabled] { opacity: 0.4; }
+.btn.sec { background: var(--fundo2); color: var(--texto); }
+.btn + .btn, .btn + .dupla, .dupla + .btn { margin-top: 10px; }
+.dupla > .btn { margin-top: 0; }
+.dupla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.btn-texto { color: var(--acao); font-weight: 600; min-height: 44px; padding: 0 4px; }
+
+/* campos */
+.campo { display: block; margin: 0 0 14px; }
+.campo span { display: block; font: var(--t-legenda); color: var(--texto2); margin-bottom: 6px; }
+.campo input, .entrada { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 10px; border: 0.5px solid var(--fio); background: var(--fundo2); font-size: 17px; }
+.campo input:focus, .entrada:focus { outline: 2px solid var(--acao); outline-offset: 0; }
+.tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.erro-txt { color: var(--erro); font: var(--t-legenda); margin: -6px 0 12px; }
+.chave { width: 51px; height: 31px; border-radius: 16px; background: var(--vazio); position: relative; flex: none; transition: background 0.2s; }
+.chave::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.25); transition: transform 0.2s; }
+.chave[aria-checked="true"] { background: var(--ok); }
+.chave[aria-checked="true"]::after { transform: translateX(20px); }
+.apto-num { width: 88px; min-height: 40px; padding: 6px 10px; border-radius: 8px; border: 0.5px solid var(--fio); background: var(--fundo2); font-variant-numeric: tabular-nums; }
+.setas { display: flex; gap: 4px; }
+.setas button { width: 44px; height: 44px; border-radius: 10px; color: var(--acao); display: grid; place-items: center; }
+.setas button[disabled] { color: var(--vazio); }
+.passos { display: flex; gap: 6px; margin: 8px 0 18px; }
+.passos i { flex: 1; height: 3px; border-radius: 2px; background: var(--vazio); }
+.passos i.feito { background: var(--acao); }
+
+/* leitura */
+.foto { position: relative; background: var(--fundo2); border-radius: 12px; overflow: hidden; margin: 4px 0 14px; }
+.foto img { display: block; width: 100%; height: auto; max-height: 52vh; object-fit: contain; background: #000; }
+.foto .caixa { position: absolute; border: 2px solid var(--ok); border-radius: 6px; pointer-events: none; }
+.foto .toque { position: absolute; left: 0; right: 0; bottom: 0; padding: 8px 12px; font: var(--t-legenda); color: #fff; background: rgba(0,0,0,.55); }
+.vazia { padding: 28px 20px; display: flex; flex-direction: column; gap: 14px; align-items: center; text-align: center; }
+.vazia p { margin: 0; color: var(--texto2); max-width: 30ch; }
+.arquivo { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.valor { font: var(--t-leitura); font-variant-numeric: tabular-nums; letter-spacing: -0.5px; margin: 0; min-height: 50px; }
+.valor.vazio { color: var(--texto2); }
+.dados { margin: 8px 0 12px; }
+.dados .linha { min-height: 40px; }
+.situacao { font-weight: 600; }
+.aviso-forte { color: var(--aviso); font: var(--t-legenda); margin: 0 0 10px; }
+
+/* fio de prumo */
+.prumo { display: flex; align-items: center; gap: 14px; padding: 12px 0; color: var(--texto2); }
+.prumo svg { width: 28px; height: 56px; flex: none; overflow: visible; }
+.prumo .pendulo { transform-origin: 14px 2px; animation: balanca 1.6s ease-in-out infinite; }
+@keyframes balanca { 0%, 100% { transform: rotate(14deg); } 50% { transform: rotate(-14deg); } }
+@media (prefers-reduced-motion: reduce) { .prumo .pendulo { animation: none; } * { transition: none !important; } }
+
+/* revisão */
+.previa { background: var(--fundo2); padding: 14px; border-radius: 12px; margin: 6px 0 16px; overflow-x: auto; }
+.folha { background: #fff; color: #111; padding: 22px 20px; min-width: 300px; font-size: 11px; line-height: 1.3; }
+.folha .eyebrow { color: #1F4647; font-weight: 700; font-size: 8px; letter-spacing: 1.1px; }
+.folha .nome { font-size: 20px; font-weight: 700; margin: 4px 0 2px; }
+.folha .mes { font-size: 12px; }
+.folha .regua { height: 1.2px; background: #1F4647; margin: 10px 0 6px; }
+.folha .meta { display: flex; justify-content: space-between; color: #6E6E73; font-size: 8px; gap: 8px; margin-bottom: 12px; }
+.folha table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.folha th { font-size: 8px; color: #6E6E73; text-align: right; padding: 5px 6px; border-bottom: 0.8px solid #111; }
+.folha th:first-child, .folha td:first-child { text-align: left; }
+.folha td { padding: 5px 6px; border-bottom: 0.4px solid #D9D9D5; text-align: right; }
+.folha td:first-child { font-weight: 700; }
+.folha tr:nth-child(even) td { background: #F6F6F4; }
+.folha .pt { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
+.folha .falta { color: #6E6E73; }
+.folha .rod { display: flex; justify-content: space-between; color: #6E6E73; font-size: 7px; border-top: 0.4px solid #D9D9D5; margin-top: 14px; padding-top: 6px; }
+.copiar { display: flex; align-items: flex-start; gap: 10px; border-bottom: 0.5px solid var(--fio); padding: 10px 0; }
+.copiar .p { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-line; }
+.ok-txt { color: var(--ok); }
+
+/* aviso flutuante */
+.toast { position: fixed; left: 50%; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 20; background: var(--texto); color: var(--fundo); border-radius: 12px; padding: 0 6px 0 16px; min-height: 48px; display: flex; align-items: center; gap: 12px; font-size: 15px; max-width: calc(100% - 32px); }
+.toast button { color: var(--acao); filter: brightness(1.6); font-weight: 600; min-height: 44px; padding: 0 10px; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .toast button { filter: none; color: #1F4647; } }
+
+/* entrada: o fio de prumo cai do topo, balança, amortece e para sobre a marca
+   do chão; aí o prédio (o mesmo mapa da tela do mês) acende andar por andar. */
+.intro { display: flex; flex-direction: column; min-height: 100%; }
+.intro .cena { display: block; width: min(100%, 340px); height: auto; margin: 0 auto; overflow: visible; }
+.intro .eco { opacity: 0; }
+.intro .apto { fill: var(--vazio); transition: fill 0.25s; }
+.intro .apto.aceso { fill: var(--agua); }
+.intro .texto { text-align: center; margin-top: 8px; }
+.intro h1 { font-size: 46px; letter-spacing: -1px; margin: 0; }
+.intro .sub { margin: 6px auto 0; max-width: 28ch; font-size: 17px; }
+.intro .rodape { padding-top: 24px; }
+</style>
+
+<div id="app" class="pad"></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js"></script>
+<script>/*LOGICA*/</script>
+<script>/*SEMENTES*/</script>
+<script>/*APP*/</script>
